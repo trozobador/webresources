@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Exportar Relatório</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      margin: 0;
+      background-color: #f3f2f1;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 32px;
+      width: 480px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #323130;
+      margin-top: 0;
+      margin-bottom: 24px;
+    }
+
+    .field-group {
+      margin-bottom: 20px;
+    }
+
+    .field-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #201f1e;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #c8c6c4;
+      border-radius: 4px;
+      background-color: #ffffff;
+      color: #323130;
+      transition: border-color 0.2s;
+    }
+
+    input[type="date"]:focus {
+      outline: none;
+      border-color: #0078d4;
+    }
+
+    .radios {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 14px;
+      color: #323130;
+    }
+
+    .radios input[type="radio"] {
+      margin-right: 6px;
+    }
+
+    .error {
+      color: #a4262c;
+      background: #fde7e9;
+      border: 1px solid #f3b9bc;
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, border 0.3s;
+    }
+
+    .cancel {
+      background-color: #ffffff;
+      color: #323130;
+      border: 1px solid #8a8886;
+    }
+
+    .cancel:hover {
+      background-color: #f3f2f1;
+    }
+
+    .send {
+      background-color: #0078d4;
+      color: #ffffff;
+      border: 1px solid #0078d4;
+    }
+
+    .send:hover {
+      background-color: #005a9e;
+      border-color: #005a9e;
+    }
+
+    .loading {
+      font-size: 14px;
+      color: #0078d4;
+      margin-right: auto;
+      align-self: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>Exportar relatório para análise</h2>
+
+    <div class="field-group">
+      <label for="start">Início:</label>
+      <input type="date" id="start" name="start">
+    </div>
+
+    <div class="field-group">
+      <label for="end">Final:</label>
+      <input type="date" id="end" name="end">
+    </div>
+
+    <div class="field-group">
+      <label>Selecione o conjunto de revendas</label>
+      <div class="radios">
+        <label><input type="radio" name="revendas" value="minha" checked> Revendas da minha plataforma</label>
+        <label><input type="radio" name="revendas" value="todas"> Todas revendas</label>
+      </div>
+    </div>
+
+    <div class="error" id="error" style="display:none;"></div>
+
+    <div class="actions">
+      <span class="loading" id="loading" style="display:none;">Enviando...</span>
+      <button class="cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="send" onclick="enviar()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.onload = () => {
+    document.getElementById('modalOverlay').style.display = 'flex';
+  };
+
+  function fecharModal(event) {
+    if (!event || event.target === document.getElementById('modalOverlay')) {
+      document.getElementById('modalOverlay').style.display = 'none';
+    }
+  }
+
+  function enviar() {
+    const start = document.getElementById('start').value;
+    const end = document.getElementById('end').value;
+    const errorDiv = document.getElementById('error');
+    const loading = document.getElementById('loading');
+    errorDiv.style.display = "none";
+    errorDiv.innerText = "";
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!start || !end) {
+      showError("Por favor, preencha as duas datas.");
+      return;
+    }
+
+    if (endDate < startDate) {
+      showError("A data final não pode ser menor que a inicial.");
+      return;
+    }
+
+    const diff = (endDate - startDate) / (1000 * 60 * 60 * 24);
+    if (diff > 90) {
+      showError("A diferença entre as datas não pode ser maior que 90 dias.");
+      return;
+    }
+
+    if (endDate > today) {
+      showError("A data final não pode ser maior que hoje.");
+      return;
+    }
+
+    const tipo = document.querySelector('input[name="revendas"]:checked').value;
+    const payload = {
+      dataInicio: start,
+      dataFim: end,
+      tipoRevenda: tipo
+    };
+
+    loading.style.display = 'inline-block';
+
+    fetch("https://api.exemplo.com/exportar-relatorio", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }).then(response => {
+      loading.style.display = 'none';
+      if (response.ok) {
+        alert("Relatório exportado com sucesso!");
+        fecharModal();
+      } else {
+        showError("Erro ao exportar. Tente novamente.");
+      }
+    }).catch(err => {
+      loading.style.display = 'none';
+      showError("Erro de rede: " + err.message);
+    });
+  }
+
+  function showError(msg) {
+    const errorDiv = document.getElementById('error');
+    errorDiv.innerText = msg;
+    errorDiv.style.display = "block";
+  }
+</script>
+
+</body>
+</html>
