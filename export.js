@@ -41,3 +41,31 @@ Xrm.WebApi.retrieveMultipleRecords("account", "?$select=name,telephone1,revenue"
     exportDynamicsQueryToExcel(result, "Contas.xlsx");
 });
 // Exemplo de uso
+
+
+
+function getLoggedUserBusinessUnit() {
+    return new Promise(function (resolve, reject) {
+        var userId = Xrm.Utility.getGlobalContext().userSettings.userId;
+        userId = userId.replace("{", "").replace("}", "");
+
+        Xrm.WebApi.online.retrieveRecord("systemuser", userId, "?$select=fullname&$expand=businessunitid($select=name)")
+            .then(function (result) {
+                if (result.hasOwnProperty("businessunitid") && result.businessunitid && result.businessunitid.name) {
+                    resolve(result.businessunitid.name);
+                } else {
+                    reject("Business Unit not found for the logged user.");
+                }
+            })
+            .catch(function (error) {
+                reject(error.message);
+            });
+    });
+}
+
+
+getLoggedUserBusinessUnit().then(function (businessUnitName) {
+    console.log("Business Unit do usuário logado:", businessUnitName);
+}).catch(function (error) {
+    console.error("Erro ao obter Business Unit:", error);
+});
