@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuvem de Palavras</title>
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        #wordCloud {
+            width: 100%;
+            height: 800px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Nuvem de Palavras</h2>
+    <div id="wordCloud"></div>
+
+    <script>
+        function gerarNuvemDePalavras(palavras) {
+            const container = document.getElementById('wordCloud');
+            container.innerHTML = '';
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Conta a frequência de cada palavra
+            const frequencias = {};
+            palavras.forEach(p => {
+                const palavra = p.toLowerCase();
+                frequencias[palavra] = (frequencias[palavra] || 0) + 1;
+            });
+
+            const maxFrequencia = Math.max(...Object.values(frequencias));
+
+            // Cria SVG
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", width);
+            svg.setAttribute("height", height);
+
+            // Função auxiliar para posição aleatória
+            function getRandomPosition() {
+                return {
+                    x: Math.random() * (width - 100) + 50,
+                    y: Math.random() * (height - 100) + 50
+                };
+            }
+
+            // Renderiza palavras
+            Object.keys(frequencias).forEach(palavra => {
+                const freq = frequencias[palavra];
+                const fontSize = 10 + (freq / maxFrequencia) * 50;
+
+                const { x, y } = getRandomPosition();
+
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", x);
+                text.setAttribute("y", y);
+                text.setAttribute("fill", "#333");
+                text.setAttribute("font-size", fontSize);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("font-family", "Arial");
+                text.textContent = palavra;
+
+                svg.appendChild(text);
+            });
+
+            container.appendChild(svg);
+        }
+
+        // 🔥 Exemplo de uso:
+        const listaDePalavras = [
+            "javascript", "html", "css", "javascript", "html", "programação", "web",
+            "desenvolvimento", "frontend", "backend", "api", "framework", "javascript",
+            "code", "cloud", "servidor", "node", "javascript", "api", "html", "css", "web"
+        ];
+
+        gerarNuvemDePalavras(listaDePalavras);
+    </script>
+</body>
+</html>
