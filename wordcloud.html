@@ -2,73 +2,117 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Nuvem de Palavras</title>
+    <title>Nuvem de Palavras Circular com Cores</title>
     <style>
         body {
             background-color: #f4f4f4;
             font-family: Arial, sans-serif;
+            text-align: center;
         }
         #wordCloud {
             width: 100%;
             height: 800px;
             border: 1px solid #ccc;
             background: white;
+            margin: auto;
         }
     </style>
 </head>
 <body>
 
-    <h2>Nuvem de Palavras</h2>
+    <h2>Nuvem de Palavras Circular com Cores</h2>
     <div id="wordCloud"></div>
 
     <script>
-        function gerarNuvemDePalavras(palavras) {
+        function gerarNuvemCircular(palavras) {
             const container = document.getElementById('wordCloud');
             container.innerHTML = '';
 
             const width = container.clientWidth;
             const height = container.clientHeight;
+            const centerX = width / 2;
+            const centerY = height / 2;
 
-            // Conta a frequência de cada palavra
+            // Função para gerar cor aleatória
+            function corAleatoria() {
+                const r = Math.floor(Math.random() * 200 + 55);
+                const g = Math.floor(Math.random() * 200 + 55);
+                const b = Math.floor(Math.random() * 200 + 55);
+                return `rgb(${r},${g},${b})`;
+            }
+
+            // Contagem de frequência
             const frequencias = {};
             palavras.forEach(p => {
                 const palavra = p.toLowerCase();
                 frequencias[palavra] = (frequencias[palavra] || 0) + 1;
             });
 
-            const maxFrequencia = Math.max(...Object.values(frequencias));
+            const entradas = Object.entries(frequencias).sort((a, b) => b[1] - a[1]);
+            const maxFrequencia = entradas[0][1];
 
             // Cria SVG
             const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             svg.setAttribute("width", width);
             svg.setAttribute("height", height);
 
-            // Função auxiliar para posição aleatória
-            function getRandomPosition() {
-                return {
-                    x: Math.random() * (width - 100) + 50,
-                    y: Math.random() * (height - 100) + 50
-                };
+            // Renderiza palavra central (mais frequente)
+            const [palavraCentral, freqCentral] = entradas[0];
+            const fontSizeCentral = 20 + (freqCentral / maxFrequencia) * 50;
+
+            const textCentral = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            textCentral.setAttribute("x", centerX);
+            textCentral.setAttribute("y", centerY);
+            textCentral.setAttribute("fill", corAleatoria());
+            textCentral.setAttribute("font-size", fontSizeCentral);
+            textCentral.setAttribute("text-anchor", "middle");
+            textCentral.setAttribute("font-family", "Arial");
+            textCentral.setAttribute("dominant-baseline", "middle");
+            textCentral.textContent = palavraCentral;
+            svg.appendChild(textCentral);
+
+            // Remove do array de entrada
+            entradas.shift();
+
+            // Organiza em círculos concêntricos
+            let radiusStep = 80;
+            let currentRadius = radiusStep;
+            let angleStep;
+            let angle;
+            let index = 0;
+
+            while (entradas.length > 0) {
+                const quantidadeNaCamada = Math.min(entradas.length, Math.ceil(currentRadius / 15) * 4);
+                angleStep = (2 * Math.PI) / quantidadeNaCamada;
+                angle = Math.random() * Math.PI * 2;
+
+                for (let i = 0; i < quantidadeNaCamada; i++) {
+                    if (entradas.length === 0) break;
+
+                    const [palavra, freq] = entradas.shift();
+                    const fontSize = 10 + (freq / maxFrequencia) * 40;
+
+                    const x = centerX + currentRadius * Math.cos(angle);
+                    const y = centerY + currentRadius * Math.sin(angle);
+
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", x);
+                    text.setAttribute("y", y);
+                    text.setAttribute("fill", corAleatoria());
+                    text.setAttribute("font-size", fontSize);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("font-family", "Arial");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.textContent = palavra;
+
+                    svg.appendChild(text);
+
+                    angle += angleStep;
+                    index++;
+                }
+
+                currentRadius += radiusStep;
             }
-
-            // Renderiza palavras
-            Object.keys(frequencias).forEach(palavra => {
-                const freq = frequencias[palavra];
-                const fontSize = 10 + (freq / maxFrequencia) * 50;
-
-                const { x, y } = getRandomPosition();
-
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", x);
-                text.setAttribute("y", y);
-                text.setAttribute("fill", "#333");
-                text.setAttribute("font-size", fontSize);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("font-family", "Arial");
-                text.textContent = palavra;
-
-                svg.appendChild(text);
-            });
 
             container.appendChild(svg);
         }
@@ -77,10 +121,13 @@
         const listaDePalavras = [
             "javascript", "html", "css", "javascript", "html", "programação", "web",
             "desenvolvimento", "frontend", "backend", "api", "framework", "javascript",
-            "code", "cloud", "servidor", "node", "javascript", "api", "html", "css", "web"
+            "code", "cloud", "servidor", "node", "javascript", "api", "html", "css", "web",
+            "dev", "software", "developer", "frontend", "backend", "node", "cloud", "api",
+            "openai", "gpt", "machine", "learning", "dados", "analise", "inteligencia",
+            "artificial", "sql", "nosql", "bigdata", "powerbi"
         ];
 
-        gerarNuvemDePalavras(listaDePalavras);
+        gerarNuvemCircular(listaDePalavras);
     </script>
 </body>
 </html>
