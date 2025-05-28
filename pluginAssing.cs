@@ -64,16 +64,48 @@ public class AtribuirEquipePorPlataforma : IPlugin
         tracing.Trace("Plugin AtribuirEquipePorPlataforma finalizado.");
     }
 
-    private OptionSetValue GetPlataformaOption(Entity target, ITracingService tracing)
+private OptionSetValue GetPlataformaOption(Entity target, IOrganizationService service, ITracingService tracing)
+{
+    try
     {
-        if (target.Attributes.Contains("vc4_plataforma") && target["vc4_plataforma"] is OptionSetValue option)
+        if (!target.Attributes.Contains("vc4_revenda") || !(target["vc4_revenda"] is EntityReference lojistaRef))
         {
-            tracing.Trace($"Plataforma selecionada: {option.Value}");
-            return option;
+            tracing.Trace("O campo vc4_revenda não está preenchido ou não é um EntityReference.");
+            return null;
         }
 
+        tracing.Trace($"Buscando plataforma do lojista com ID: {lojistaRef.Id}");
+
+        var lojista = service.Retrieve("vc4_lojistas", lojistaRef.Id, new ColumnSet("vc4_plataforma"));
+
+        if (lojista == null)
+        {
+            tracing.Trace($"Nenhum lojista encontrado com ID {lojistaRef.Id}");
+            return null;
+        }
+
+        if (!lojista.Attributes.Contains("vc4_plataforma"))
+        {
+            tracing.Trace($"O lojista {lojistaRef.Id} não possui o campo vc4_plataforma preenchido.");
+            return null;
+        }
+
+        var plataformaOption = lojista.GetAttributeValue<OptionSetValue>("vc4_plataforma");
+
+        if (plataformaOption != null)
+            tracing.Trace($"Plataforma encontrada no lojista: {plataformaOption.Value}");
+        else
+            tracing.Trace("Plataforma do lojista é nula.");
+
+        return plataformaOption;
+    }
+    catch (Exception ex)
+    {
+        tracing.Trace($"Erro ao obter plataforma do lojista: {ex.Message}");
         return null;
     }
+}
+
 
     private List<Dictionary<string, string>> ObterEquipesDasPlataformas(IOrganizationService service, ITracingService tracing)
     {
