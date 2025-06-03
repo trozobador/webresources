@@ -69,3 +69,34 @@ getLoggedUserBusinessUnit().then(function (businessUnitName) {
 }).catch(function (error) {
     console.error("Erro ao obter Business Unit:", error);
 });
+
+
+
+
+
+function getBusinessUnitIdSync() {
+    try {
+        var baseUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+        var url = baseUrl + "/api/data/v9.2/WhoAmI";
+
+        var request = new XMLHttpRequest();
+        request.open("GET", url, false); // false = requisição síncrona
+        request.setRequestHeader("Accept", "application/json");
+        request.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        request.setRequestHeader("OData-MaxVersion", "4.0");
+        request.setRequestHeader("OData-Version", "4.0");
+
+        request.send();
+
+        if (request.status === 200) {
+            var response = JSON.parse(request.responseText);
+            return response.BusinessUnitId;
+        } else {
+            console.error("Erro na requisição WhoAmI: " + request.status + " - " + request.statusText);
+            return null;
+        }
+    } catch (e) {
+        console.error("Exceção ao obter BusinessUnitId: " + e.message);
+        return null;
+    }
+}
